@@ -3,6 +3,7 @@ package com.portfolio.cinema_system_reservation.service;
 import com.portfolio.cinema_system_reservation.dto.CreateReservationRequest;
 import com.portfolio.cinema_system_reservation.dto.ReservationDto;
 import com.portfolio.cinema_system_reservation.dto.ReservedSeatDto;
+import com.portfolio.cinema_system_reservation.exceptions.SeatAlreadyReservedException;
 import com.portfolio.cinema_system_reservation.model.Reservation;
 import com.portfolio.cinema_system_reservation.model.Screening;
 import com.portfolio.cinema_system_reservation.model.Seat;
@@ -14,7 +15,9 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class ReservationService {
@@ -40,12 +43,15 @@ public class ReservationService {
 
         Long hallId = screening.getHall().getId();
 
-        List<Long> seatIds = request.seatIds().stream()
-                .distinct()
-                .toList();
+        List<Long> seatIds = request.seatIds();
+        if(seatIds == null || seatIds.isEmpty()) {
+            throw new IllegalArgumentException("seatIds must not be empty");
+        }
 
-        List<Seat> seats = seatRepository.findAllById(seatIds);
-        if (seats.size() != seatIds.size()) {
+        Set<Long> uniqueSeatIds = new HashSet<>(seatIds);
+
+        List<Seat> seats = seatRepository.findAllById(uniqueSeatIds);
+        if (seats.size() != uniqueSeatIds.size()) {
             throw new IllegalArgumentException("Some seats do not exist");
         }
 
@@ -54,18 +60,20 @@ public class ReservationService {
             if (!hallId.equals(seatHallId)) {
                 throw new IllegalArgumentException("Seat " + seat.getId() + " does not belong to hall " + hallId);
             }
-        }
 
+            if(reservedSeatRepository.existsByScreening_IdAndSeat_Id(screening.getId(), seat.getId())) {
+                throw new SeatAlreadyReservedException("Seat already reserved: " + seat.getId());
+            }
+        }
 
         Reservation reservation = new Reservation(screening, request.customerName());
         seats.forEach(reservation::addSeat);
-
 
         try {
             Reservation saved = reservationRepository.saveAndFlush(reservation);
             return toDto(saved);
         } catch (DataIntegrityViolationException e) {
-            throw new IllegalArgumentException("Seat already reserved");
+            throw new SeatAlreadyReservedException("One or more seats are already reserved");
         }
     }
 

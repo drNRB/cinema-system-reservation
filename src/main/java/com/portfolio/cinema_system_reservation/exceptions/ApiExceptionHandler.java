@@ -12,6 +12,14 @@ import java.util.Map;
 @RestControllerAdvice
 public class ApiExceptionHandler {
 
+    @ExceptionHandler(SeatAlreadyReservedException.class)
+    public ResponseEntity<Map<String, Object>> handleSeatAlreadyReserved(SeatAlreadyReservedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                "timestamp", Instant.now().toString(),
+                "error", ex.getMessage()
+        ));
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException exception) {
         HttpStatus status = exception.getMessage() != null && exception.getMessage().startsWith("Seat already reserved")
@@ -23,4 +31,6 @@ public class ApiExceptionHandler {
                 "error", exception.getMessage()
         ));
     }
+
+
 }
