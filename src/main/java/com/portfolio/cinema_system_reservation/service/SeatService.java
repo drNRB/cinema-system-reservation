@@ -8,6 +8,11 @@ import com.portfolio.cinema_system_reservation.repository.SeatRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 @Service
 public class SeatService {
     private final HallRepository hallRepository;
@@ -21,22 +26,34 @@ public class SeatService {
     @Transactional
     public int generateSeats(Long hallId, int rows, int seatsPerRow) {
         if (rows <= 0 || seatsPerRow <= 0) {
-            throw new IllegalArgumentException("Rows and seatsPerRow must be greather than 0");
+            throw new IllegalArgumentException("Rows and seatsPerRow must be greater than 0");
         }
 
         Hall hall = hallRepository.findById(hallId)
                 .orElseThrow(() -> new ResourceNotFoundException("Hall not found: " + hallId));
 
-        int created = 0;
+        List<Seat> existingSeats = seatRepository.findByHall_IdOrderByRowAscNumberAsc(hallId);
+
+        Set<String> existingSeatSet = existingSeats.stream()
+                .map(seat -> seat.getRow() + "-" + seat.getNumber())
+                .collect(Collectors.toSet());
+
+        List<Seat> seatsToSave = new ArrayList<>();
 
         for (int row = 1; row <= rows; row++) {
-            for(int seat = 1; seat <= seatsPerRow; seat++) {
-                if(!seatRepository.existsByHall_IdAndRowAndNumber(hallId,row,seat)) {
-                    seatRepository.save(new Seat(hall,row,seat));
-                    created++;
+            for (int seatNumber = 1; seatNumber <= seatsPerRow; seatNumber++) {
+                String seatKey = row + "-" + seatNumber;
+
+                if (!existingSeatSet.contains(seatKey)) {
+                    seatsToSave.add(new Seat(hall, row, seatNumber));
                 }
             }
         }
-        return created;
+
+        if (!seatsToSave.isEmpty()) {
+            seatRepository.saveAll(seatsToSave);
+        }
+
+        return seatsToSave.size();
     }
 }
