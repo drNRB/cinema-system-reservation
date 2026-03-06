@@ -11,6 +11,7 @@ import com.portfolio.cinema_system_reservation.repository.ScreeningRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -32,8 +33,26 @@ public class ScreeningService {
         Hall hall = hallRepository.findById(request.hallId())
                 .orElseThrow(() -> new ResourceNotFoundException("Hall not found: " + request.hallId()));
 
-        if (screeningRepository.existsByHall_IdAndStartTime(request.hallId(), request.startTime())) {
-            throw new IllegalArgumentException("Screening already exists for hall at that starting time.");
+        LocalDateTime newStart = request.startTime();
+        LocalDateTime newEnd = newStart.plusMinutes(movie.getDurationMinutes()).plusMinutes(15);
+
+        List<Screening> dailyScreenings = screeningRepository.findByHall_IdAndStartTimeBetween(
+                request.hallId(),
+                newStart.minusHours(12),
+                newStart.plusHours(12)
+        );
+
+        boolean hasOverlap = dailyScreenings.stream().anyMatch(existing -> {
+            LocalDateTime existingStart = existing.getStartTime();
+            LocalDateTime existingEnd = existingStart
+                    .plusMinutes(existing.getMovie().getDurationMinutes())
+                    .plusMinutes(15);
+
+            return existingStart.isBefore(newEnd) && existingEnd.isAfter(newStart);
+        });
+
+        if (hasOverlap) {
+            throw new IllegalArgumentException("Screening overlaps with an existing one.");
         }
 
         Screening saved = screeningRepository.save(new Screening(movie, hall, request.startTime()));

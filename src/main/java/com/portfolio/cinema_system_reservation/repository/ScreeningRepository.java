@@ -7,8 +7,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface ScreeningRepository extends JpaRepository<Screening, Long> {
-    boolean existsByHall_IdAndStartTime (Long hallId, LocalDateTime startTime);
 
     List<Screening> findByHall_IdOrderByStartTimeAsc(Long hallId);
-    List<Screening> findByMovie_IdOrderByStartTimeAsc (Long movieId);
+
+    List<Screening> findByMovie_IdOrderByStartTimeAsc(Long movieId);
+
+    List<Screening> findByHall_IdAndStartTimeBetween(Long hallId, LocalDateTime start, LocalDateTime end);
 }
