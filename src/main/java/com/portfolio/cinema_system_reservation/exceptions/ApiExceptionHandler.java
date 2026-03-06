@@ -14,21 +14,23 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(SeatAlreadyReservedException.class)
     public ResponseEntity<Map<String, Object>> handleSeatAlreadyReserved(SeatAlreadyReservedException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
-                "timestamp", Instant.now().toString(),
-                "error", ex.getMessage()
-        ));
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleResourceNotFound(ResourceNotFoundException ex) {
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException exception) {
-        HttpStatus status = exception.getMessage() != null && exception.getMessage().startsWith("Seat already reserved")
-                ? HttpStatus.CONFLICT
-                : HttpStatus.BAD_REQUEST;
+    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
 
+    private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String message) {
         return ResponseEntity.status(status).body(Map.of(
                 "timestamp", Instant.now().toString(),
-                "error", exception.getMessage()
+                "error", message
         ));
     }
 

@@ -1,5 +1,6 @@
 package com.portfolio.cinema_system_reservation.service;
 
+import com.portfolio.cinema_system_reservation.exceptions.ResourceNotFoundException;
 import com.portfolio.cinema_system_reservation.model.Hall;
 import com.portfolio.cinema_system_reservation.model.Seat;
 import com.portfolio.cinema_system_reservation.repository.HallRepository;
@@ -24,7 +25,7 @@ public class SeatService {
         }
 
         Hall hall = hallRepository.findById(hallId)
-                .orElseThrow(() -> new IllegalArgumentException("Hall not found: " + hallId));
+                .orElseThrow(() -> new ResourceNotFoundException("Hall not found: " + hallId));
 
         int created = 0;
 

@@ -2,6 +2,7 @@ package com.portfolio.cinema_system_reservation.service;
 
 import com.portfolio.cinema_system_reservation.dto.CreateScreeningRequest;
 import com.portfolio.cinema_system_reservation.dto.ScreeningDto;
+import com.portfolio.cinema_system_reservation.exceptions.ResourceNotFoundException;
 import com.portfolio.cinema_system_reservation.model.Hall;
 import com.portfolio.cinema_system_reservation.model.Movie;
 import com.portfolio.cinema_system_reservation.model.Screening;
@@ -29,7 +30,7 @@ public class ScreeningService {
     public ScreeningDto create(CreateScreeningRequest request) {
         Movie movie = movieService.getOrThrow(request.movieId());
         Hall hall = hallRepository.findById(request.hallId())
-                .orElseThrow(() -> new IllegalArgumentException("Hall not found: " + request.hallId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Hall not found: " + request.hallId()));
 
         if (screeningRepository.existsByHall_IdAndStartTime(request.hallId(), request.startTime())) {
             throw new IllegalArgumentException("Screening already exists for hall at that starting time.");

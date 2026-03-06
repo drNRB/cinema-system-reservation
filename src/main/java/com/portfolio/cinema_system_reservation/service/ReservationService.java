@@ -3,6 +3,7 @@ package com.portfolio.cinema_system_reservation.service;
 import com.portfolio.cinema_system_reservation.dto.CreateReservationRequest;
 import com.portfolio.cinema_system_reservation.dto.ReservationDto;
 import com.portfolio.cinema_system_reservation.dto.ReservedSeatDto;
+import com.portfolio.cinema_system_reservation.exceptions.ResourceNotFoundException;
 import com.portfolio.cinema_system_reservation.exceptions.SeatAlreadyReservedException;
 import com.portfolio.cinema_system_reservation.model.Reservation;
 import com.portfolio.cinema_system_reservation.model.Screening;
@@ -39,7 +40,7 @@ public class ReservationService {
     @Transactional
     public ReservationDto create(CreateReservationRequest request) {
         Screening screening = screeningRepository.findById(request.screeningId())
-                .orElseThrow(() -> new IllegalArgumentException("Screening not found: " + request.screeningId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Screening not found: " + request.screeningId()));
 
         Long hallId = screening.getHall().getId();
 
@@ -80,7 +81,7 @@ public class ReservationService {
     @Transactional(readOnly = true)
     public ReservationDto get(Long reservationId) {
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new IllegalArgumentException("Reservation not found: " + reservationId));
+                .orElseThrow(() -> new ResourceNotFoundException("Reservation not found: " + reservationId));
         return toDto(reservation);
     }
 
