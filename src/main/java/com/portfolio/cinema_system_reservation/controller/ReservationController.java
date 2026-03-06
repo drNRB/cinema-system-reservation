@@ -4,6 +4,7 @@ import com.portfolio.cinema_system_reservation.dto.CreateReservationRequest;
 import com.portfolio.cinema_system_reservation.dto.ReservationDto;
 import com.portfolio.cinema_system_reservation.service.ReservationService;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,5 +31,11 @@ public class ReservationController {
     @GetMapping("/by-screening/{screeningId}")
     public List<ReservationDto> listByScreening(@PathVariable Long screeningId) {
         return reservationService.listByScreening(screeningId);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> cancel(@PathVariable Long id) {
+        reservationService.cancel(id);
+        return ResponseEntity.noContent().build();
     }
 }

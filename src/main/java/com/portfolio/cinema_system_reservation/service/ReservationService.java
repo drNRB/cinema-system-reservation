@@ -98,6 +98,19 @@ public class ReservationService {
                 .toList();
     }
 
+    @Transactional
+    public void cancel (Long reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(()-> new ResourceNotFoundException("Reservation not found: " + reservationId));
+
+        if(reservation.getScreening().getStartTime().isBefore(LocalDateTime.now().plusMinutes(15))) {
+            throw new IllegalArgumentException("Cannot cancel reservation. The screening starts in less than 15 minutes" +
+                    " or has already started.");
+        }
+
+        reservationRepository.delete(reservation);
+    }
+
 
     private ReservationDto toDto(Reservation reservation) {
         Screening s = reservation.getScreening();
