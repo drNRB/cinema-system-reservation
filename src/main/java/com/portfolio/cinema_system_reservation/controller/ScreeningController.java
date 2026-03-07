@@ -2,6 +2,7 @@ package com.portfolio.cinema_system_reservation.controller;
 
 import com.portfolio.cinema_system_reservation.dto.CreateScreeningRequest;
 import com.portfolio.cinema_system_reservation.dto.ScreeningDto;
+import com.portfolio.cinema_system_reservation.dto.SeatStatusDto;
 import com.portfolio.cinema_system_reservation.service.ScreeningService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
@@ -23,12 +24,17 @@ public class ScreeningController {
     }
 
     @GetMapping("/by-hall/{hallId}")
-    public List<ScreeningDto> listByHall (@PathVariable("hallId") Long hallId) {
+    public List<ScreeningDto> listByHall(@PathVariable("hallId") Long hallId) {
         return screeningService.listByHall(hallId);
     }
 
     @GetMapping("/by-movie/{movieId}")
-    public List<ScreeningDto> listByMovie (@PathVariable("movieId") Long movieId) {
+    public List<ScreeningDto> listByMovie(@PathVariable("movieId") Long movieId) {
         return screeningService.listByMovie(movieId);
+    }
+
+    @GetMapping("/{id}/seats")
+    public List<SeatStatusDto> getSeatsStatus(@PathVariable Long id) {
+        return screeningService.getSeatStatus(id);
     }
 }

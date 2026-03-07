@@ -2,17 +2,22 @@ package com.portfolio.cinema_system_reservation.service;
 
 import com.portfolio.cinema_system_reservation.dto.CreateScreeningRequest;
 import com.portfolio.cinema_system_reservation.dto.ScreeningDto;
+import com.portfolio.cinema_system_reservation.dto.SeatStatusDto;
 import com.portfolio.cinema_system_reservation.exceptions.ResourceNotFoundException;
 import com.portfolio.cinema_system_reservation.model.Hall;
 import com.portfolio.cinema_system_reservation.model.Movie;
 import com.portfolio.cinema_system_reservation.model.Screening;
 import com.portfolio.cinema_system_reservation.repository.HallRepository;
+import com.portfolio.cinema_system_reservation.repository.ReservedSeatRepository;
 import com.portfolio.cinema_system_reservation.repository.ScreeningRepository;
+import com.portfolio.cinema_system_reservation.repository.SeatRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class ScreeningService {
@@ -20,11 +25,18 @@ public class ScreeningService {
     private final ScreeningRepository screeningRepository;
     private final MovieService movieService;
     private final HallRepository hallRepository;
+    private final SeatRepository seatRepository;
+    private final ReservedSeatRepository reservedSeatRepository;
 
-    public ScreeningService(ScreeningRepository screeningRepository, MovieService movieService, HallRepository hallRepository) {
+    public ScreeningService(ScreeningRepository screeningRepository,
+                            MovieService movieService,
+                            HallRepository hallRepository,
+                            SeatRepository seatRepository, ReservedSeatRepository reservedSeatRepository) {
         this.screeningRepository = screeningRepository;
         this.movieService = movieService;
         this.hallRepository = hallRepository;
+        this.seatRepository = seatRepository;
+        this.reservedSeatRepository = reservedSeatRepository;
     }
 
     @Transactional
@@ -70,6 +82,29 @@ public class ScreeningService {
     public List<ScreeningDto> listByMovie(Long movieId) {
         return screeningRepository.findByMovie_IdOrderByStartTimeAsc(movieId).stream()
                 .map(this::toDto)
+                .toList();
+    }
+
+    public List<SeatStatusDto> getSeatStatus(Long screeningId) {
+        Screening screening = screeningRepository.findById(screeningId)
+                .orElseThrow(() -> new ResourceNotFoundException("Screening not found: " + screeningId));
+
+        Long hallId = screening.getHall().getId();
+
+        var allSeatsInHall = seatRepository.findByHall_IdOrderByRowAscNumberAsc(hallId);
+
+        Set<Long> reservedSeatIds = reservedSeatRepository.findByScreening_Id(screeningId)
+                .stream()
+                .map(reservedSeat -> reservedSeat.getSeat().getId())
+                .collect(Collectors.toSet());
+
+        return allSeatsInHall.stream()
+                .map(seat -> new SeatStatusDto(
+                        seat.getId(),
+                        seat.getRow(),
+                        seat.getNumber(),
+                        reservedSeatIds.contains(seat.getId())
+                ))
                 .toList();
     }
 
