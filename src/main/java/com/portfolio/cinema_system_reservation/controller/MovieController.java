@@ -4,6 +4,8 @@ import com.portfolio.cinema_system_reservation.dto.CreateMovieRequest;
 import com.portfolio.cinema_system_reservation.dto.MovieDto;
 import com.portfolio.cinema_system_reservation.service.MovieService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,7 +25,7 @@ public class MovieController {
     }
 
     @GetMapping
-    public List<MovieDto> list() {
-        return movieService.list();
+    public Page<MovieDto> list(Pageable pageable) {
+        return movieService.list(pageable);
     }
 }

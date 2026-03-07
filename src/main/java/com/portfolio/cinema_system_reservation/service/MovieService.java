@@ -5,10 +5,10 @@ import com.portfolio.cinema_system_reservation.dto.MovieDto;
 import com.portfolio.cinema_system_reservation.exceptions.ResourceNotFoundException;
 import com.portfolio.cinema_system_reservation.model.Movie;
 import com.portfolio.cinema_system_reservation.repository.MovieRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 public class MovieService {
@@ -32,10 +32,9 @@ public class MovieService {
     }
 
     @Transactional(readOnly = true)
-    public List<MovieDto> list() {
-        return movieRepository.findAll().stream()
-                .map(movie -> new MovieDto(movie.getId(), movie.getTitle(), movie.getDurationMinutes()))
-                .toList();
+    public Page<MovieDto> list(Pageable pageable) {
+        return movieRepository.findAll(pageable)
+                .map(movie -> new MovieDto(movie.getId(), movie.getTitle(), movie.getDurationMinutes()));
     }
 
     @Transactional(readOnly = true)
