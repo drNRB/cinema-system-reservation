@@ -54,3 +54,6 @@ HELP.md
 # Local runtime data
 data/
 
+# Config properties
+application-config.properties
+
