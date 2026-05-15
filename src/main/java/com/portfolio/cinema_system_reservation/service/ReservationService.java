@@ -3,6 +3,7 @@ package com.portfolio.cinema_system_reservation.service;
 import com.portfolio.cinema_system_reservation.dto.CreateReservationRequest;
 import com.portfolio.cinema_system_reservation.dto.ReservationDto;
 import com.portfolio.cinema_system_reservation.dto.ReservedSeatDto;
+import com.portfolio.cinema_system_reservation.exceptions.InvalidReservationException;
 import com.portfolio.cinema_system_reservation.exceptions.ResourceNotFoundException;
 import com.portfolio.cinema_system_reservation.exceptions.SeatAlreadyReservedException;
 import com.portfolio.cinema_system_reservation.model.Reservation;
@@ -44,7 +45,7 @@ public class ReservationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Screening not found: " + request.screeningId()));
 
         if(screening.getStartTime().isBefore(LocalDateTime.now().plusMinutes(15))) {
-            throw new IllegalArgumentException("Cannot reserve seats. The screening starts in less than 15 minutes " +
+            throw new InvalidReservationException("Cannot reserve seats. The screening starts in less than 15 minutes " +
                     "or has already started.");
         }
 
@@ -52,20 +53,20 @@ public class ReservationService {
 
         List<Long> seatIds = request.seatIds();
         if(seatIds == null || seatIds.isEmpty()) {
-            throw new IllegalArgumentException("seatIds must not be empty");
+            throw new InvalidReservationException("seatIds must not be empty");
         }
 
         Set<Long> uniqueSeatIds = new HashSet<>(seatIds);
 
         List<Seat> seats = seatRepository.findAllById(uniqueSeatIds);
         if (seats.size() != uniqueSeatIds.size()) {
-            throw new IllegalArgumentException("Some seats do not exist");
+            throw new InvalidReservationException("Some seats do not exist");
         }
 
         for (Seat seat : seats) {
             Long seatHallId = seat.getHall().getId();
             if (!hallId.equals(seatHallId)) {
-                throw new IllegalArgumentException("Seat " + seat.getId() + " does not belong to hall " + hallId);
+                throw new InvalidReservationException("Seat " + seat.getId() + " does not belong to hall " + hallId);
             }
 
             if(reservedSeatRepository.existsByScreening_IdAndSeat_Id(screening.getId(), seat.getId())) {
@@ -104,7 +105,7 @@ public class ReservationService {
                 .orElseThrow(()-> new ResourceNotFoundException("Reservation not found: " + reservationId));
 
         if(reservation.getScreening().getStartTime().isBefore(LocalDateTime.now().plusMinutes(15))) {
-            throw new IllegalArgumentException("Cannot cancel reservation. The screening starts in less than 15 minutes" +
+            throw new InvalidReservationException("Cannot cancel reservation. The screening starts in less than 15 minutes" +
                     " or has already started.");
         }
 

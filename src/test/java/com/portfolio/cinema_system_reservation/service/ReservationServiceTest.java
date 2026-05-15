@@ -1,6 +1,7 @@
 package com.portfolio.cinema_system_reservation.service;
 
 import com.portfolio.cinema_system_reservation.dto.CreateReservationRequest;
+import com.portfolio.cinema_system_reservation.exceptions.InvalidReservationException;
 import com.portfolio.cinema_system_reservation.exceptions.SeatAlreadyReservedException;
 import com.portfolio.cinema_system_reservation.model.*;
 import com.portfolio.cinema_system_reservation.repository.ReservationRepository;
@@ -46,7 +47,7 @@ class ReservationServiceTest {
 
         when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
 
-        assertThrows(IllegalArgumentException.class, () -> reservationService.cancel(reservationId));
+        assertThrows(InvalidReservationException.class, () -> reservationService.cancel(reservationId));
 
         verify(reservationRepository, never()).delete(any());
     }

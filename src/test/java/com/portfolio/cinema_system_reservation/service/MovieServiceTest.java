@@ -2,6 +2,7 @@ package com.portfolio.cinema_system_reservation.service;
 
 import com.portfolio.cinema_system_reservation.dto.CreateMovieRequest;
 import com.portfolio.cinema_system_reservation.dto.MovieDto;
+import com.portfolio.cinema_system_reservation.exceptions.DuplicateResourceException;
 import com.portfolio.cinema_system_reservation.model.Movie;
 import com.portfolio.cinema_system_reservation.repository.MovieRepository;
 import org.junit.jupiter.api.Test;
@@ -27,8 +28,8 @@ class MovieServiceTest {
         CreateMovieRequest request = new CreateMovieRequest("Test", 136);
         when(movieRepository.existsByTitleIgnoreCase("Test")).thenReturn(true);
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
+        DuplicateResourceException exception = assertThrows(
+                DuplicateResourceException.class,
                 () -> movieService.create(request)
         );
 

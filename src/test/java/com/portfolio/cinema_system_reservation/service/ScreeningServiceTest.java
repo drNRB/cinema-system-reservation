@@ -2,6 +2,7 @@ package com.portfolio.cinema_system_reservation.service;
 
 import com.portfolio.cinema_system_reservation.dto.CreateScreeningRequest;
 import com.portfolio.cinema_system_reservation.dto.ScreeningDto;
+import com.portfolio.cinema_system_reservation.exceptions.ScreeningOverlapException;
 import com.portfolio.cinema_system_reservation.model.Hall;
 import com.portfolio.cinema_system_reservation.model.Movie;
 import com.portfolio.cinema_system_reservation.model.Screening;
@@ -95,8 +96,8 @@ class ScreeningServiceTest {
         when(screeningRepository.findByHall_IdAndStartTimeBetween(eq(hallId), any(), any()))
                 .thenReturn(List.of(existingScreening));
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
+        ScreeningOverlapException exception = assertThrows(
+                ScreeningOverlapException.class,
                 () -> screeningService.create(request)
         );
 

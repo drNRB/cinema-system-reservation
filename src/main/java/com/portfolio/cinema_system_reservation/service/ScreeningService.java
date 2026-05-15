@@ -4,6 +4,7 @@ import com.portfolio.cinema_system_reservation.dto.CreateScreeningRequest;
 import com.portfolio.cinema_system_reservation.dto.ScreeningDto;
 import com.portfolio.cinema_system_reservation.dto.SeatStatusDto;
 import com.portfolio.cinema_system_reservation.exceptions.ResourceNotFoundException;
+import com.portfolio.cinema_system_reservation.exceptions.ScreeningOverlapException;
 import com.portfolio.cinema_system_reservation.model.Hall;
 import com.portfolio.cinema_system_reservation.model.Movie;
 import com.portfolio.cinema_system_reservation.model.Screening;
@@ -64,7 +65,7 @@ public class ScreeningService {
         });
 
         if (hasOverlap) {
-            throw new IllegalArgumentException("Screening overlaps with an existing one.");
+            throw new ScreeningOverlapException("Screening overlaps with an existing one.");
         }
 
         Screening saved = screeningRepository.save(new Screening(movie, hall, request.startTime()));

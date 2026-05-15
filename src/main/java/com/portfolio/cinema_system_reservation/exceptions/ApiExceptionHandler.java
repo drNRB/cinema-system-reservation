@@ -12,9 +12,13 @@ import java.time.Instant;
 @RestControllerAdvice
 public class ApiExceptionHandler {
 
-    @ExceptionHandler(SeatAlreadyReservedException.class)
-    public ResponseEntity<ErrorResponse> handleSeatAlreadyReserved(SeatAlreadyReservedException ex,
-                                                                   HttpServletRequest request) {
+    @ExceptionHandler({
+            SeatAlreadyReservedException.class,
+            DuplicateResourceException.class,
+            ScreeningOverlapException.class
+    })
+
+    public ResponseEntity<ErrorResponse> handleConflictExceptions(RuntimeException ex, HttpServletRequest request) {
         return buildResponse(HttpStatus.CONFLICT, "Conflict", ex.getMessage(), request.getRequestURI());
     }
 

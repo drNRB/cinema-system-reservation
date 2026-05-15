@@ -2,6 +2,7 @@ package com.portfolio.cinema_system_reservation.service;
 
 import com.portfolio.cinema_system_reservation.dto.CreateMovieRequest;
 import com.portfolio.cinema_system_reservation.dto.MovieDto;
+import com.portfolio.cinema_system_reservation.exceptions.DuplicateResourceException;
 import com.portfolio.cinema_system_reservation.exceptions.ResourceNotFoundException;
 import com.portfolio.cinema_system_reservation.model.Movie;
 import com.portfolio.cinema_system_reservation.repository.MovieRepository;
@@ -22,7 +23,7 @@ public class MovieService {
     @Transactional
     public MovieDto create(CreateMovieRequest request) {
         if (movieRepository.existsByTitleIgnoreCase(request.title())) {
-            throw new IllegalArgumentException("Movie already exists: " + request.title());
+            throw new DuplicateResourceException("Movie already exists: " + request.title());
         }
 
         Movie movie = new Movie(request.title().trim(), request.durationMinutes());
