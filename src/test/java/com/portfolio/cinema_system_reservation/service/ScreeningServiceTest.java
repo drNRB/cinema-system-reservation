@@ -13,6 +13,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.portfolio.cinema_system_reservation.dto.SeatStatusDto;
+import com.portfolio.cinema_system_reservation.exceptions.ResourceNotFoundException;
+import com.portfolio.cinema_system_reservation.model.ReservedSeat;
+import com.portfolio.cinema_system_reservation.model.Seat;
+import com.portfolio.cinema_system_reservation.repository.ReservedSeatRepository;
+import com.portfolio.cinema_system_reservation.repository.SeatRepository;
+
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,6 +39,10 @@ class ScreeningServiceTest {
     private MovieService movieService;
     @Mock
     private HallRepository hallRepository;
+    @Mock
+    private SeatRepository seatRepository;
+    @Mock
+    private ReservedSeatRepository reservedSeatRepository;
 
     @InjectMocks
     private ScreeningService screeningService;
@@ -41,7 +52,7 @@ class ScreeningServiceTest {
         Long moveId = 1L;
         Long hallId = 1L;
 
-        LocalDateTime startTime = LocalDateTime.of(2026, 3, 20, 15, 0);
+        LocalDateTime startTime = LocalDateTime.now().plusDays(1);
         CreateScreeningRequest request = new CreateScreeningRequest(moveId, hallId, startTime);
 
         Movie movie = mock(Movie.class);
@@ -78,7 +89,8 @@ class ScreeningServiceTest {
     void create_ShouldThrowIllegalArgumentException_WhenScreeningsOverlap() {
         Long movieId = 1L;
         Long hallId = 1L;
-        LocalDateTime newStartTime = LocalDateTime.of(2026, 3, 20, 15, 0);
+
+        LocalDateTime newStartTime = LocalDateTime.now().plusDays(1).withHour(15).withMinute(0);
         CreateScreeningRequest request = new CreateScreeningRequest(movieId, hallId, newStartTime);
 
         Movie movie = mock(Movie.class);
@@ -90,7 +102,7 @@ class ScreeningServiceTest {
         when(hallRepository.findById(hallId)).thenReturn(Optional.of(hall));
 
         Screening existingScreening = mock(Screening.class);
-        when(existingScreening.getStartTime()).thenReturn(LocalDateTime.of(2026, 3, 20, 14, 0));
+        when(existingScreening.getStartTime()).thenReturn(newStartTime.minusHours(1));
         when(existingScreening.getMovie()).thenReturn(movie);
 
         when(screeningRepository.findByHall_IdAndStartTimeBetween(eq(hallId), any(), any()))
@@ -105,4 +117,8 @@ class ScreeningServiceTest {
 
         verify(screeningRepository, never()).save(any(Screening.class));
     }
+
+
+
+
 }
