@@ -117,7 +117,7 @@ class ScreeningServiceTest {
     void create_ShouldThrowResourceNotFoundException_WhenHallDoesNotExists() {
         Long movieId = 1L;
         Long hallId = 999L;
-        CreateScreeningRequest request = new CreateScreeningRequest(movieId, hallId, LocalDateTime.now());
+        CreateScreeningRequest request = new CreateScreeningRequest(movieId, hallId, LocalDateTime.now().plusDays(1));
 
         Movie movie = mock(Movie.class);
         when(movieService.getOrThrow(movieId)).thenReturn(movie);
@@ -147,6 +147,27 @@ class ScreeningServiceTest {
 
         assertEquals(1, result.size());
         assertEquals(10L, result.get(0).id());
+    }
+
+    @Test
+    void listByMovie_ShouldReturnListOfScreeningDtos() {
+        Long moveId = 1L;
+        Screening mockScreening = mock(Screening.class);
+        Movie mockMovie = mock(Movie.class);
+        Hall mockHall = mock(Hall.class);
+
+        when(mockScreening.getId()).thenReturn(10L);
+        when(mockScreening.getMovie()).thenReturn(mockMovie);
+        when(mockScreening.getHall()).thenReturn(mockHall);
+        when(mockScreening.getStartTime()).thenReturn(LocalDateTime.now().plusDays(1));
+        when(mockMovie.getId()).thenReturn(moveId);
+        when(mockHall.getId()).thenReturn(1L);
+
+        when(screeningRepository.findByMovie_IdOrderByStartTimeAsc(moveId)).thenReturn(List.of(mockScreening));
+
+        List<ScreeningDto> result = screeningService.listByMovie(moveId);
+
+        assertEquals(1, result.size());
     }
 
     @Test
