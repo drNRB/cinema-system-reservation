@@ -1,7 +1,9 @@
 package com.portfolio.cinema_system_reservation.service;
 
 import com.portfolio.cinema_system_reservation.dto.CreateReservationRequest;
+import com.portfolio.cinema_system_reservation.dto.ReservationDto;
 import com.portfolio.cinema_system_reservation.exceptions.InvalidReservationException;
+import com.portfolio.cinema_system_reservation.exceptions.ResourceNotFoundException;
 import com.portfolio.cinema_system_reservation.exceptions.SeatAlreadyReservedException;
 import com.portfolio.cinema_system_reservation.model.*;
 import com.portfolio.cinema_system_reservation.repository.ReservationRepository;
@@ -18,7 +20,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -96,5 +98,92 @@ class ReservationServiceTest {
         assertThrows(SeatAlreadyReservedException.class, () -> reservationService.create(request));
         verify(reservationRepository, never()).saveAndFlush(any());
     }
+
+    @Test
+    void get_ShouldReturnReservationDto_WhenReservationExists() {
+        Long id = 1L;
+        Reservation mockReservation = mock(Reservation.class);
+        Screening mockScreening = mock(Screening.class);
+        Movie mockMovie = mock(Movie.class);
+        Hall mockHall = mock(Hall.class);
+
+        when(mockReservation.getId()).thenReturn(id);
+        when(mockReservation.getCustomerName()).thenReturn("John Doe");
+        when(mockReservation.getScreening()).thenReturn(mockScreening);
+
+        when(mockMovie.getTitle()).thenReturn("Inception");
+
+        when(mockScreening.getId()).thenReturn(2L);
+        when(mockScreening.getMovie()).thenReturn(mockMovie);
+        when(mockScreening.getHall()).thenReturn(mockHall);
+        when(mockScreening.getStartTime()).thenReturn(LocalDateTime.now().plusDays(1));
+
+        when(reservationRepository.findById(id)).thenReturn(Optional.of(mockReservation));
+
+        ReservationDto result = reservationService.get(id);
+
+        assertNotNull(result);
+        assertEquals(id, result.id());
+        assertEquals("John Doe", result.customerName());
+    }
+
+    @Test
+    void get_ShouldThrowResourceNotFoundException_WhenReservationDoesNotExists() {
+        Long id = 999L;
+        when(reservationRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> reservationService.get(id));
+    }
+
+    @Test
+    void listByScreening_ShouldReturnListOfReservationDtos() {
+        Long screeningId = 1L;
+        Reservation mockReservation = mock(Reservation.class);
+        Screening mockScreening = mock(Screening.class);
+        Movie mockMovie = mock(Movie.class);
+        Hall mockHall = mock(Hall.class);
+
+        when(mockScreening.getMovie()).thenReturn(mockMovie);
+        when(mockScreening.getHall()).thenReturn(mockHall);
+
+        when(mockMovie.getTitle()).thenReturn("Inception");
+        when(mockHall.getId()).thenReturn(99L);
+
+        when(mockReservation.getId()).thenReturn(10L);
+        when(mockReservation.getCustomerName()).thenReturn("John Doe");
+        when(mockReservation.getScreening()).thenReturn(mockScreening);
+
+        when(mockScreening.getId()).thenReturn(screeningId);
+
+        when(reservationRepository.findByScreening_IdOrderByCreatedAtAsc(screeningId))
+                .thenReturn(List.of(mockReservation));
+
+        List<ReservationDto> result = reservationService.listByScreening(screeningId);
+        
+        assertEquals(1, result.size());
+        assertEquals(10L, result.get(0).id());
+        assertEquals("John Doe", result.get(0).customerName());
+    }
+
+    @Test
+    void create_ShouldThrowResourceNotFoundException_WhenScreeningDoesNotExist() {
+        Long screeningId = 999L;
+        CreateReservationRequest request = new CreateReservationRequest(screeningId, List.of(1L, 2L), "John Doe");
+
+        when(screeningRepository.findById(screeningId)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> reservationService.create(request));
+        verify(reservationRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void cancel_ShouldThrowResourceNotFoundException_WhenReservationDoesNotExist() {
+        Long id = 999L;
+        when(reservationRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> reservationService.cancel(id));
+        verify(reservationRepository, never()).delete(any());
+    }
+
 
 }
