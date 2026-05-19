@@ -44,15 +44,12 @@ public class ReservationService {
         Screening screening = screeningRepository.findById(request.screeningId())
                 .orElseThrow(() -> new ResourceNotFoundException("Screening not found: " + request.screeningId()));
 
-        if(screening.getStartTime().isBefore(LocalDateTime.now().plusMinutes(15))) {
-            throw new InvalidReservationException("Cannot reserve seats. The screening starts in less than 15 minutes " +
-                    "or has already started.");
-        }
+       validateScreeningTime(screening);
 
         Long hallId = screening.getHall().getId();
 
         List<Long> seatIds = request.seatIds();
-        if(seatIds == null || seatIds.isEmpty()) {
+        if (seatIds == null || seatIds.isEmpty()) {
             throw new InvalidReservationException("seatIds must not be empty");
         }
 
@@ -63,15 +60,15 @@ public class ReservationService {
             throw new InvalidReservationException("Some seats do not exist");
         }
 
-        for (Seat seat : seats) {
-            Long seatHallId = seat.getHall().getId();
-            if (!hallId.equals(seatHallId)) {
-                throw new InvalidReservationException("Seat " + seat.getId() + " does not belong to hall " + hallId);
-            }
+        seats.stream()
+                .filter(seat -> !hallId.equals(seat.getHall().getId()))
+                .findFirst()
+                .ifPresent(seat -> {
+                    throw new InvalidReservationException("Seat " + seat.getId() + " does not belong to hall " + hallId);
+                });
 
-            if(reservedSeatRepository.existsByScreening_IdAndSeat_Id(screening.getId(), seat.getId())) {
-                throw new SeatAlreadyReservedException("Seat already reserved: " + seat.getId());
-            }
+        if(reservedSeatRepository.existsByScreening_IdAndSeat_IdIn(screening.getId(), uniqueSeatIds)) {
+            throw new SeatAlreadyReservedException("One or more selected seats are already reserved");
         }
 
         Reservation reservation = new Reservation(screening, request.customerName());
@@ -100,14 +97,11 @@ public class ReservationService {
     }
 
     @Transactional
-    public void cancel (Long reservationId) {
+    public void cancel(Long reservationId) {
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(()-> new ResourceNotFoundException("Reservation not found: " + reservationId));
+                .orElseThrow(() -> new ResourceNotFoundException("Reservation not found: " + reservationId));
 
-        if(reservation.getScreening().getStartTime().isBefore(LocalDateTime.now().plusMinutes(15))) {
-            throw new InvalidReservationException("Cannot cancel reservation. The screening starts in less than 15 minutes" +
-                    " or has already started.");
-        }
+        validateScreeningTime(reservation.getScreening());
 
         reservationRepository.delete(reservation);
     }
@@ -132,6 +126,14 @@ public class ReservationService {
                         ))
                         .toList()
         );
+    }
+
+    private void validateScreeningTime(Screening screening) {
+        if (screening.getStartTime().isBefore(LocalDateTime.now().plusMinutes(15))) {
+            throw new InvalidReservationException(
+                    "Cannot process reservation. The screening starts in less than 15 minutes or has already started"
+            );
+        }
     }
 
 

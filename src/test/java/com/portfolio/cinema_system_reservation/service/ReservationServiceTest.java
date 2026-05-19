@@ -87,13 +87,12 @@ class ReservationServiceTest {
 
         when(screening.getStartTime()).thenReturn(LocalDateTime.now().plusDays(1));
 
-        when(seat.getId()).thenReturn(seatId);
         when(seat.getHall()).thenReturn(hall);
 
         when(screeningRepository.findById(screeningId)).thenReturn(Optional.of(screening));
         when(seatRepository.findAllById(any())).thenReturn(List.of(seat));
 
-        when(reservedSeatRepository.existsByScreening_IdAndSeat_Id(screeningId, seatId)).thenReturn(true);
+        when(reservedSeatRepository.existsByScreening_IdAndSeat_IdIn(eq(screeningId), any())).thenReturn(true);
 
         assertThrows(SeatAlreadyReservedException.class, () -> reservationService.create(request));
         verify(reservationRepository, never()).saveAndFlush(any());
@@ -159,7 +158,7 @@ class ReservationServiceTest {
                 .thenReturn(List.of(mockReservation));
 
         List<ReservationDto> result = reservationService.listByScreening(screeningId);
-        
+
         assertEquals(1, result.size());
         assertEquals(10L, result.get(0).id());
         assertEquals("John Doe", result.get(0).customerName());
