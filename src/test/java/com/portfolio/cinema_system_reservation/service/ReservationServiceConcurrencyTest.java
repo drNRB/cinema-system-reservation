@@ -55,12 +55,12 @@ public class ReservationServiceConcurrencyTest {
     @Test
     void shouldPreventDoubleBookingUnderConcurrentLoad() throws InterruptedException {
         Movie movie = movieRepository.save(new Movie("Interstellar", 169));
-        Hall hall = hallRepository.save(new Hall("Sala 1"));
+        Hall hall = hallRepository.save(new Hall("Hall 1"));
         Seat seat = seatRepository.save(new Seat(hall, 5, 10));
 
 
         Screening screening = screeningRepository.save(
-                new Screening(movie, hall, LocalDateTime.now().plusDays(2))
+                new Screening(movie, hall, LocalDateTime.of(2099,5,1,19,0))
         );
 
         Long realScreeningId = screening.getId();
@@ -90,11 +90,11 @@ public class ReservationServiceConcurrencyTest {
         executorService.shutdown();
 
 
-        assertEquals(1, successfulReservations.get(), "Tylko jedna rezerwacja powinna się udać.");
-        assertEquals(1, failedReservations.get(), "Druga rezerwacja powinna rzucić wyjątek SeatAlreadyReservedException.");
+        assertEquals(1, successfulReservations.get(), "Only one reservation should be successful.");
+        assertEquals(1, failedReservations.get(), "The second reservation should throw SeatAlreadyReservedException.");
 
         long totalReservationsInDb = reservationRepository.count();
-        assertEquals(1, totalReservationsInDb, "W bazie danych powinna znajdować się tylko jedna rezerwacja.");
+        assertEquals(1, totalReservationsInDb, "There should be only one reservation in database.");
     }
 
     private Runnable createReservationTask(CreateReservationRequest request,
@@ -109,8 +109,8 @@ public class ReservationServiceConcurrencyTest {
                 successCount.incrementAndGet();
             } catch (SeatAlreadyReservedException e) {
                 failCount.incrementAndGet();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+            } catch (Exception e) {
+                System.err.println("Exact root cause: " + e.getClass().getSimpleName());
             } finally {
                 endLatch.countDown();
             }
