@@ -17,17 +17,22 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 @Testcontainers
 public class ReservationServiceConcurrencyTest {
+    private final List<Throwable> unexpectedErrors = Collections.synchronizedList(new ArrayList<>());
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
@@ -42,13 +47,19 @@ public class ReservationServiceConcurrencyTest {
         registry.add("spring.datasource.password", postgres::getPassword);
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "update");
     }
-    @Autowired private ReservationService reservationService;
-    @Autowired private MovieRepository movieRepository;
-    @Autowired private HallRepository hallRepository;
-    @Autowired private ScreeningRepository screeningRepository;
-    @Autowired private SeatRepository seatRepository;
-    @Autowired private ReservationRepository reservationRepository;
-    @Autowired private ReservedSeatRepository reservedSeatRepository;
+
+    @Autowired
+    private ReservationService reservationService;
+    @Autowired
+    private MovieRepository movieRepository;
+    @Autowired
+    private HallRepository hallRepository;
+    @Autowired
+    private ScreeningRepository screeningRepository;
+    @Autowired
+    private SeatRepository seatRepository;
+    @Autowired
+    private ReservationRepository reservationRepository;
 
 
 
@@ -60,7 +71,7 @@ public class ReservationServiceConcurrencyTest {
 
 
         Screening screening = screeningRepository.save(
-                new Screening(movie, hall, LocalDateTime.of(2099,5,1,19,0))
+                new Screening(movie, hall, LocalDateTime.of(2099, 5, 1, 19, 0))
         );
 
         Long realScreeningId = screening.getId();
@@ -86,15 +97,18 @@ public class ReservationServiceConcurrencyTest {
 
         startLatch.countDown();
 
-        endLatch.await();
+        assertTrue(endLatch.await(30, TimeUnit.SECONDS), "The threads didn't end by the set time");
         executorService.shutdown();
 
 
+        assertTrue(unexpectedErrors.isEmpty(), "Unexpected errors: " + unexpectedErrors);
+
         assertEquals(1, successfulReservations.get(), "Only one reservation should be successful.");
-        assertEquals(1, failedReservations.get(), "The second reservation should throw SeatAlreadyReservedException.");
+        assertEquals(1, failedReservations.get(), "Second reservation should fail with SeatAlreadyReservedException.");
 
         long totalReservationsInDb = reservationRepository.count();
         assertEquals(1, totalReservationsInDb, "There should be only one reservation in database.");
+
     }
 
     private Runnable createReservationTask(CreateReservationRequest request,
@@ -110,14 +124,13 @@ public class ReservationServiceConcurrencyTest {
             } catch (SeatAlreadyReservedException e) {
                 failCount.incrementAndGet();
             } catch (Exception e) {
-                System.err.println("Exact root cause: " + e.getClass().getSimpleName());
+                unexpectedErrors.add(e);
             } finally {
                 endLatch.countDown();
             }
+
         };
     }
-
-
 
 
 }
