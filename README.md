@@ -29,7 +29,10 @@ A RESTful backend for a cinema seat reservation system. Built with **Java 21** a
 
 ### Prerequisites
 
-**Java 21**, **Maven** and **Docker Desktop**.
+**Java 21** and **Docker Desktop**.
+
+Maven is not required — the project ships the Maven Wrapper (`mvnw`), which downloads the
+correct Maven version on first use.
 
 ### 1. Environment setup
 
@@ -57,12 +60,14 @@ Pass the credentials as environment variables:
 
 ```bash
 # Linux / macOS
-DB_USER=cinema_user DB_PASSWORD=cinema_password mvn spring-boot:run
+DB_USER=cinema_user DB_PASSWORD=cinema_password ./mvnw spring-boot:run
 ```
 
 ```powershell
 # Windows PowerShell
-$env:DB_USER="cinema_user"; $env:DB_PASSWORD="cinema_password"; mvn spring-boot:run
+$env:DB_USER="cinema_user"
+$env:DB_PASSWORD="cinema_password"
+.\mvnw.cmd spring-boot:run
 ```
 
 In IntelliJ IDEA: **Run → Edit Configurations → Environment variables**.
@@ -72,7 +77,7 @@ The application starts on `http://localhost:8080`.
 ## 🧪 Testing
 
 ```bash
-mvn verify
+./mvnw verify          # Windows: .\mvnw.cmd verify
 ```
 
 This compiles the project, runs the full test suite and packages the application — the
