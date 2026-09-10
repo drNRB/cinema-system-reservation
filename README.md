@@ -95,6 +95,19 @@ The suite covers three levels:
 No manual database setup is needed for tests: Testcontainers starts and disposes of the
 container automatically.
 
+### Running as a container
+
+    docker compose up -d
+    docker build -t cinema-api:1.0 .
+    docker run --rm -p 8080:8080 \
+      -e DB_HOST=host.docker.internal \
+      -e DB_USER=cinema_user \
+      -e DB_PASSWORD=cinema_password \
+      cinema-api:1.0
+
+Note: `host.docker.internal` points to the host machine — inside a container,
+`localhost` refers to the container itself.
+
 ## 📐 Design Notes
 
 **Two layers of protection against double-booking.** The service first checks seat
